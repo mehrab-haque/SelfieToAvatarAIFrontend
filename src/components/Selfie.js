@@ -4,6 +4,7 @@ import Webcam from 'react-webcam'
 import { CameraOptions, useFaceDetection } from 'react-use-face-detection';
 import FaceDetection from '@mediapipe/face_detection';
 import { Camera } from '@mediapipe/camera_utils';
+import { showToast } from '../App';
 
 const Selfie=props=>{
 
@@ -32,6 +33,14 @@ const Selfie=props=>{
     const selfieClick=async ()=>{
         const imageSrc = webcamRef.current.getScreenshot();
         console.log(imageSrc)
+        if(facesDetected===1)
+            showToast('Selfie Taken Successfully')
+        else if (facesDetected===0)
+            showToast('No face found')
+        else if(facesDetected>1)
+            showToast('Multiple face error')
+        else
+            showToast('Camera is not ready yet')
     }
       
 
