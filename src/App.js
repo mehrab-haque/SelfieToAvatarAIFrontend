@@ -9,7 +9,7 @@ function App() {
 
   showToast = (message) => {
     oldToast.dark(message, {
-      position: "top-right",
+      position: "bottom-right",
       autoClose: 3000,
       hideProgressBar: false,
       closeOnClick: true,
