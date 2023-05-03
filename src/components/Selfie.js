@@ -1,12 +1,15 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material'
-import React from 'react'
+import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material'
+import React, { useState } from 'react'
 import Webcam from 'react-webcam'
 import { CameraOptions, useFaceDetection } from 'react-use-face-detection';
 import FaceDetection from '@mediapipe/face_detection';
 import { Camera } from '@mediapipe/camera_utils';
 import { showToast } from '../App';
+import axios from 'axios'
 
 const Selfie=props=>{
+
+    const api_url='https://d715-103-187-94-234.ngrok-free.app'
 
     var width = window.innerWidth-50;
     var height = window.innerHeight-200;
@@ -29,12 +32,24 @@ const Selfie=props=>{
           }),
       });
 
+
+    const [loading,setLoading]=useState(false)
+    const [avatar,setAvatar]=useState(null)
+    const [avatarDialog,setAvatarDialog]=useState(false)
+
     
     const selfieClick=async ()=>{
         const imageSrc = webcamRef.current.getScreenshot();
-        console.log(imageSrc)
-        if(facesDetected===1)
-            showToast('Selfie Taken Successfully')
+        if(facesDetected===1){
+            showToast('Processing avatar...')
+            setLoading(true)
+            setAvatarDialog(true)
+            var res=await axios.post(`${api_url}/avatar`,{
+                base64:imageSrc
+            })
+            setAvatar(res.data.base64)
+            setLoading(false)
+        }
         else if (facesDetected===0)
             showToast('No face found')
         else if(facesDetected>1)
@@ -52,6 +67,38 @@ const Selfie=props=>{
             justifyContent:'center',
             alignItems:'center'
         }}>
+            <Dialog open={avatarDialog}>
+                <DialogTitle>
+                    Your Avatar
+                </DialogTitle>
+                <DialogContent>
+                    <div style={{
+                        width:'100%'
+                    }}>
+                        {
+                            loading || avatar===null?(
+                                <center>
+                                    <CircularProgress/>
+                                </center>
+                            ):(
+                                <img src={avatar} style={{
+                                    width:'100%'
+                                }}/>
+                            )
+                        }
+                    </div>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        color='primary'
+                        onClick={()=>{
+                            setAvatar(null)
+                            setAvatarDialog(false)
+                        }}>
+                            Close
+                        </Button>
+                </DialogActions>
+            </Dialog>
             <div style={{
                 width:`${width+50}px`,
                 display:'block'
@@ -87,7 +134,7 @@ const Selfie=props=>{
                         <Webcam
                             ref={webcamRef}
                             forceScreenshotSourceSize
-                            screenshotFormat="image/png"
+                            screenshotFormat="image/jpeg"
                             style={{
                                 height,
                                 width,
