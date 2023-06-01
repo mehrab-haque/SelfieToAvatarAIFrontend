@@ -1,5 +1,5 @@
 import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Webcam from 'react-webcam'
 import { CameraOptions, useFaceDetection } from 'react-use-face-detection';
 import FaceDetection from '@mediapipe/face_detection';
@@ -9,7 +9,19 @@ import axios from 'axios'
 
 const Selfie=props=>{
 
-    const api_url='https://d715-103-187-94-234.ngrok-free.app'
+    const api_url='https://7580-103-187-94-247.ngrok-free.app'
+    //const api_url='http://localhost:4000'
+
+    const backgroundImages=[
+        'https://buet-edu-1.s3.amazonaws.com/auto_upload/0RMFi9mrPNe7mol2JwcZAf40F3n2/1683558860756.JPG',
+        'https://buet-edu-1.s3.amazonaws.com/auto_upload/0RMFi9mrPNe7mol2JwcZAf40F3n2/1683559001096.JPG',
+        'https://buet-edu-1.s3.amazonaws.com/auto_upload/0RMFi9mrPNe7mol2JwcZAf40F3n2/1683463006394.jpg'
+    ]
+
+    const [selectedBackground,setSelectedBackground]=useState(null)
+    const [backgroundSelectionDialog,setBackgroundSelectionDialog]=useState(false)
+
+    const [imageSource,setImageSource]=useState(null)
 
     var width = window.innerWidth-50;
     var height = window.innerHeight-200;
@@ -38,17 +50,36 @@ const Selfie=props=>{
     const [avatarDialog,setAvatarDialog]=useState(false)
 
     
-    const selfieClick=async ()=>{
-        const imageSrc = webcamRef.current.getScreenshot();
-        if(facesDetected===1){
+    const submitData=async ()=>{
+
+        if(selectedBackground===null){
+            showToast('Please select a background image')
+        }else{
             showToast('Processing avatar...')
             setLoading(true)
+            setBackgroundSelectionDialog(false)
             setAvatarDialog(true)
             var res=await axios.post(`${api_url}/avatar`,{
-                base64:imageSrc
+                base64:imageSource,
+                dest:selectedBackground
+            }).catch(err=>{
+                showToast('server error')
+                setBackgroundSelectionDialog(true)
+                setAvatarDialog(false)
+                setLoading(false)
             })
             setAvatar(res.data.base64)
             setLoading(false)
+        }
+
+       
+    }
+
+    const selfieClick=async ()=>{
+        const imageSrc = webcamRef.current.getScreenshot();
+        if(facesDetected===1){
+            setImageSource(imageSrc)
+            setBackgroundSelectionDialog(true)
         }
         else if (facesDetected===0)
             showToast('No face found')
@@ -67,6 +98,42 @@ const Selfie=props=>{
             justifyContent:'center',
             alignItems:'center'
         }}>
+            <Dialog open={backgroundSelectionDialog}>
+                <DialogTitle>
+                    Select Background Image
+                </DialogTitle>
+                <DialogContent>
+                    <div style={{width:'100%'}}>
+                        {
+                            backgroundImages.map(b=>{
+                                return(
+                                    <div onClick={()=>{
+                                        setSelectedBackground(b)
+                                    }} style={{padding:'10px',backgroundColor:b===selectedBackground?'lime':'white'}}>
+                                    <img src={b} style={{
+                                        width:'100%'
+                                    }}/>
+                                </div>
+                                )
+                            })
+                        }
+                    </div>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        color='error'
+                        onClick={()=>{setBackgroundSelectionDialog(false)}}
+                        >
+                            Cancel
+                        </Button>
+                    <Button
+                        color='success'
+                        onClick={submitData}
+                        >
+                            Submit
+                        </Button>
+                </DialogActions>
+            </Dialog>
             <Dialog open={avatarDialog}>
                 <DialogTitle>
                     Your Avatar
@@ -110,10 +177,22 @@ const Selfie=props=>{
                                 display:'inline-block',
                                 height:'15px',
                                 transform:'translateY(2px)',
-                                borderRadius:'50%',
-                                width:'15px',
-                                backgroundColor:isLoading?'#aaaaaa':(facesDetected!==1?'red':'#00cf00')
-                            }}/>
+                                fontSize:'0.6em',
+                                color:facesDetected===1?'green':'red'
+                              
+                            }}>
+                                {
+                                    facesDetected===0?(
+                                        'No face detected'
+                                    ):(
+                                        facesDetected===1?(
+                                            'Face Detected'
+                                        ):(
+                                            'More than 1 face'
+                                        )
+                                    )
+                                }
+                            </span>
                     </DialogTitle>
                     <DialogContent>
                     <div style={{ width, height, position: 'relative',overflow:'hidden' }}>
